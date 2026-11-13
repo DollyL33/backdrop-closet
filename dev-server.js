@@ -11,6 +11,7 @@ const ROUTES = {
   "/api/read-clothes": () => import("./api/read-clothes.js"),
   "/api/places": () => import("./api/places.js"),
   "/api/weather": () => import("./api/weather.js"),
+  "/api/style-trip": () => import("./api/style-trip.js"),
 };
 
 async function runApi(req, res, load) {

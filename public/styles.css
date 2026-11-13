@@ -289,3 +289,99 @@ button, input, select { font: inherit; color: inherit; }
   .field-row { grid-template-columns: 1fr; gap: 0; }
   .step-title { font-size: 28px; }
 }
+
+/* ---------- Loading ---------- */
+.loading { text-align: center; padding: 64px 0; }
+.loading-swatches { display: flex; justify-content: center; gap: 10px; margin-bottom: 24px; }
+.loading-swatches span {
+  width: 36px;
+  height: 52px;
+  border-radius: 8px;
+  animation: bob 1.2s ease-in-out infinite;
+}
+.loading-swatches span:nth-child(1) { background: #F4F1EA; border: 1px solid var(--faint); }
+.loading-swatches span:nth-child(2) { background: #2F5D8A; animation-delay: 0.15s; }
+.loading-swatches span:nth-child(3) { background: var(--coral); animation-delay: 0.3s; }
+.loading-swatches span:nth-child(4) { background: #F2C230; animation-delay: 0.45s; }
+@keyframes bob { 50% { transform: translateY(-10px); } }
+.loading-text { font-family: var(--serif); font-size: 30px; margin: 0; }
+.loading-sub { color: var(--muted); margin: 6px 0 0; font-size: 15px; }
+
+/* ---------- Results ---------- */
+.results-head { text-align: center; margin: 8px 0 28px; }
+.results-title { font-family: var(--serif); font-weight: 400; font-size: clamp(40px, 10vw, 60px); line-height: 1.05; margin: 6px 0 10px; }
+.results-summary { color: var(--muted); margin: 0 auto; max-width: 520px; }
+.results-weather { display: inline-block; margin-top: 12px; padding: 4px 12px; border-radius: 999px; background: #EAF3F8; font-size: 14px; }
+
+.postcards { display: grid; gap: 22px; }
+.postcard {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: pop-in 0.4s ease-out both;
+}
+.backdrop-strip { display: flex; height: 64px; }
+.backdrop-strip span { flex: 1; position: relative; }
+.backdrop-strip span::after {
+  content: attr(data-name);
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  font-size: 11px;
+  color: var(--label, #1F2A37);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.postcard:hover .backdrop-strip span::after { opacity: 0.85; }
+.postcard-body { padding: 18px 20px 20px; }
+.postcard-number { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--coral-dark); font-weight: 700; margin: 0; }
+.postcard-title { font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1.1; margin: 2px 0 2px; }
+.postcard-backdrop { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
+
+.outfit { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.piece { width: 92px; text-align: center; font-size: 12px; line-height: 1.25; color: var(--muted); }
+.piece-img {
+  width: 92px;
+  height: 92px;
+  border-radius: 12px;
+  margin-bottom: 4px;
+  background-size: cover;
+  background-position: center;
+  border: 3px solid var(--piece-colour, var(--faint));
+}
+.why { margin: 0 0 12px; font-size: 16px; }
+.blend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin: 0 0 12px; }
+.blend-chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 3px; border-radius: 999px; background: var(--paper); }
+.blend-chip i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, 0.15); }
+.tips { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.tips li { display: flex; gap: 8px; }
+.tips .rule { background: #FFF6E0; border-radius: 8px; padding: 6px 8px; }
+
+.pack {
+  margin-top: 22px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: #fff;
+}
+.pack h3 { font-family: var(--serif); font-weight: 400; font-size: 28px; margin: 0 0 12px; }
+.pack h4 { font-size: 14px; margin: 18px 0 8px; color: rgba(255, 255, 255, 0.7); font-weight: 500; }
+.pack .piece { color: rgba(255, 255, 255, 0.85); width: 76px; }
+.pack .piece-img { width: 76px; height: 76px; }
+.gap-list { margin: 0; padding-left: 18px; font-size: 14px; }
+.gap-list li { margin-bottom: 4px; }
+.gap-list span { color: rgba(255, 255, 255, 0.7); }
+.model-note { margin: 16px 0 0; font-size: 12px; color: rgba(255, 255, 255, 0.55); }
+
+.secondary-button {
+  padding: 12px 22px;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 500;
+  cursor: pointer;
+  margin: 0 8px 8px;
+}
+.secondary-button:hover { background: var(--ink); color: #fff; }
+.error-box { margin-top: 14px; padding: 10px 14px; border-radius: 12px; background: var(--coral-soft); color: var(--coral-dark); font-size: 15px; }

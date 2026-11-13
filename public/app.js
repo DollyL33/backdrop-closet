@@ -235,7 +235,7 @@ async function readPhoto({ file, tile }) {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || "Something went wrong.");
     if (!data.items.length) throw new Error("No clothes found");
-    for (const item of data.items) addItem(item);
+    for (const item of data.items) addItem({ ...item, photo: image }); // keep the photo for the postcards
     tile.className = "photo done";
   } catch (err) {
     tile.className = "photo failed";
@@ -318,12 +318,133 @@ function refresh() {
   $("action-note").textContent = missing.length ? `Still need: ${missing.join(", ")}.` : "Ready when you are.";
 }
 
-$("style-button").addEventListener("click", () => {
-  // Part 3 will send the trip, the weather and these pieces to NVIDIA.
-  console.log("Trip:", { place: state.place, from: $("start-date").value, to: $("end-date").value, who: state.who, styles: state.styles });
-  console.log("Weather:", state.weather);
-  console.log("Closet:", state.items);
-  alert("Styling comes in the next step of the build. Your trip and closet are ready!");
-});
+// ---------- Step 3: style the trip ----------
+
+const LOADING_LINES = [
+  "Reading the backdrops…",
+  "Finding colours that pop…",
+  "Checking dress rules…",
+  "Planning for the weather…",
+  "Laying out your outfits…",
+];
+
+async function styleTrip() {
+  const pieces = state.items.filter((i) => i.name.trim());
+  const body = {
+    place: state.place,
+    from: $("start-date").value,
+    to: $("end-date").value,
+    who: state.who,
+    styles: state.styles,
+    // Photos stay in the browser; only the words and colours are sent.
+    items: pieces.map(({ photo, ...rest }) => rest),
+  };
+
+  show("loading");
+  let line = 0;
+  $("loading-text").textContent = LOADING_LINES[0];
+  const ticker = setInterval(() => {
+    line = (line + 1) % LOADING_LINES.length;
+    $("loading-text").textContent = LOADING_LINES[line];
+  }, 3500);
+
+  try {
+    const res = await fetch("/api/style-trip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+    showResults(data);
+    show("results");
+  } catch (err) {
+    show("planner");
+    showError(err.message);
+  } finally {
+    clearInterval(ticker);
+  }
+}
+
+function show(id) {
+  for (const s of ["planner", "loading", "results"]) $(s).hidden = s !== id;
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+function showError(message) {
+  let box = document.querySelector(".error-box");
+  if (!box) {
+    box = document.createElement("p");
+    box.className = "error-box";
+    $("action-note").after(box);
+  }
+  box.textContent = message;
+}
+
+const byId = (id) => state.items.find((i) => String(i.id) === String(id));
+
+// A piece of clothing: its photo if we have one, otherwise its colour.
+function pieceHtml(item) {
+  const look = item.photo ? `background-image:url(${item.photo});` : `background:${item.hex};`;
+  return `<div class="piece">
+    <div class="piece-img" style="${look}--piece-colour:${item.hex}"></div>
+    ${escapeHtml(item.name)}
+  </div>`;
+}
+
+// Dark text on light colours, light text on dark ones.
+function labelColour(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const lum = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  return lum > 150 ? "#1F2A37" : "#FFFFFF";
+}
+
+function showResults(r) {
+  const s = r.weather.summary;
+  $("results-title").textContent = state.place.name;
+  $("results-summary").innerHTML = `${escapeHtml(r.summary)}<br><span class="results-weather">${
+    r.weather.kind === "forecast" ? "Forecast" : "Typical"}: ${s.avgHigh}° / ${s.avgLow}°C · ${
+    s.rainyDays ? `rain on ${s.rainyDays} of ${s.totalDays} days` : "dry"}</span>`;
+
+  $("postcards").innerHTML = r.spots.map((spot, i) => {
+    const strip = spot.backdropColours.map((c) =>
+      `<span style="background:${c.hex};--label:${labelColour(c.hex)}" data-name="${escapeHtml(c.name)}"></span>`).join("");
+    const outfit = spot.outfit.map(byId).filter(Boolean).map(pieceHtml).join("");
+    const blend = spot.blendIn.map(byId).filter(Boolean);
+    const tips = [
+      spot.bestTime && `<li><span aria-hidden="true">🕰️</span><span><b>Best light:</b> ${escapeHtml(spot.bestTime)}</span></li>`,
+      spot.weatherTip && `<li><span aria-hidden="true">🌤️</span><span>${escapeHtml(spot.weatherTip)}</span></li>`,
+      spot.dressRule && `<li class="rule"><span aria-hidden="true">🙏</span><span><b>Dress rule:</b> ${escapeHtml(spot.dressRule)}</span></li>`,
+    ].filter(Boolean).join("");
+
+    return `<article class="postcard" style="animation-delay:${i * 0.08}s">
+      <div class="backdrop-strip" role="img" aria-label="Backdrop colours: ${escapeHtml(spot.backdropColours.map((c) => c.name).join(", "))}">${strip}</div>
+      <div class="postcard-body">
+        <p class="postcard-number">Spot ${i + 1}</p>
+        <h3 class="postcard-title">${escapeHtml(spot.name)}</h3>
+        <p class="postcard-backdrop">${escapeHtml(spot.backdrop)}</p>
+        <div class="outfit">${outfit}</div>
+        <p class="why">${escapeHtml(spot.why)}</p>
+        ${blend.length ? `<p class="blend">Would blend in here: ${blend.map((b) =>
+          `<span class="blend-chip"><i style="background:${b.hex}"></i>${escapeHtml(b.name)}</span>`).join("")}</p>` : ""}
+        <ul class="tips">${tips}</ul>
+      </div>
+    </article>`;
+  }).join("");
+
+  const packed = r.packing.map(byId).filter(Boolean);
+  const extras = r.extras.map(byId).filter(Boolean);
+  $("pack").innerHTML = `
+    <h3>Pack these ${packed.length} piece${packed.length === 1 ? "" : "s"}</h3>
+    <div class="outfit">${packed.map(pieceHtml).join("")}</div>
+    ${extras.length ? `<h4>Also worth bringing</h4><div class="outfit">${extras.map(pieceHtml).join("")}</div>` : ""}
+    ${r.gaps.length ? `<h4>Not in your closet: pack or borrow something similar</h4>
+      <ul class="gap-list">${r.gaps.map((g) => `<li><b>${escapeHtml(g.need)}</b> <span>${escapeHtml(g.why)}</span></li>`).join("")}</ul>` : ""}
+    <p class="model-note">Styled by ${escapeHtml(r.model)} · weather from Open-Meteo</p>`;
+}
+
+$("style-button").addEventListener("click", styleTrip);
+$("restyle-button").addEventListener("click", styleTrip);
+$("edit-button").addEventListener("click", () => show("planner"));
 
 refresh();

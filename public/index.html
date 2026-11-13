@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#FAF6EF">
   <title>Backdrop Closet · Pack from what you own</title>
   <meta name="description" content="Photograph your clothes. Backdrop Closet styles every photo spot of your trip from what you already own, for the real weather.">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -19,6 +20,7 @@
       <p class="brand-tagline">Pack from what you own.</p>
     </header>
 
+    <div id="planner">
     <!-- Step 1: the trip -->
     <section class="step" aria-labelledby="trip-title">
       <p class="step-number">1</p>
@@ -84,6 +86,29 @@
       <button type="button" id="style-button" class="primary-button" disabled>Style my trip</button>
       <p id="action-note" class="action-note">Add your trip and at least 3 pieces.</p>
     </div>
+    </div>
+
+    <!-- While the stylist works -->
+    <section id="loading" class="loading" hidden aria-live="polite">
+      <div class="loading-swatches" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <p id="loading-text" class="loading-text">Styling your trip…</p>
+      <p class="loading-sub">NVIDIA Nemotron is matching your clothes to each backdrop. This takes 20–40 seconds.</p>
+    </section>
+
+    <!-- Results: one postcard per photo spot -->
+    <section id="results" hidden>
+      <header class="results-head">
+        <p class="brand-kicker">Your trip, from your closet</p>
+        <h2 id="results-title" class="results-title"></h2>
+        <p id="results-summary" class="results-summary"></p>
+      </header>
+      <div id="postcards" class="postcards"></div>
+      <section id="pack" class="pack"></section>
+      <div class="actions">
+        <button type="button" id="edit-button" class="secondary-button">Change trip or clothes</button>
+        <button type="button" id="restyle-button" class="link-button">Style it again</button>
+      </div>
+    </section>
   </main>
 
   <template id="item-template">
