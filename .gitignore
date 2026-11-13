@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.DS_Store
+samples/
+
+# Claude Code skills from another course, not part of this project
+.agents/
+.claude/
+skills-lock.json

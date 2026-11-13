@@ -1,0 +1,11 @@
+{
+  "name": "backdrop-closet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pack from what you own: outfits for each photo spot, built from your own clothes and the real weather.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "check": "node --env-file=.env.local scripts/check-nvidia.js"
+  }
+}
