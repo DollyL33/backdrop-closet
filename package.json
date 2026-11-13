@@ -4,8 +4,11 @@
   "private": true,
   "description": "Pack from what you own: outfits for each photo spot, built from your own clothes and the real weather.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "dev": "node --env-file=.env.local dev-server.js",
     "check": "node --env-file=.env.local scripts/check-nvidia.js"
   }
 }
