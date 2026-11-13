@@ -9,6 +9,8 @@ const PUBLIC = path.resolve("public");
 const TYPES = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png" };
 const ROUTES = {
   "/api/read-clothes": () => import("./api/read-clothes.js"),
+  "/api/places": () => import("./api/places.js"),
+  "/api/weather": () => import("./api/weather.js"),
 };
 
 async function runApi(req, res, load) {

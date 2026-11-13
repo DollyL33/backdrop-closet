@@ -7,6 +7,8 @@ const MAX_SIDE = 1024;       // shrink photos to this before sending
 const AT_ONCE = 3;           // read up to 3 photos in parallel
 
 const state = {
+  place: null,               // { name, region, country, lat, lon }
+  weather: null,             // from /api/weather
   who: null,
   styles: [],
   items: [],                 // { id, name, category, colour, hex, accent, fabric }
@@ -58,9 +60,128 @@ $("end-date").min = $("start-date").value;
 $("start-date").addEventListener("change", () => {
   $("end-date").min = $("start-date").value;
   if ($("end-date").value < $("start-date").value) $("end-date").value = $("start-date").value;
+  loadWeather();
+});
+$("end-date").addEventListener("change", loadWeather);
+
+// ---------- Place: search as you type, then pick the right one ----------
+
+let searchTimer;
+let searchId = 0;
+$("destination").addEventListener("input", () => {
+  state.place = null;
+  state.weather = null;
+  $("weather").hidden = true;
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(searchPlaces, 400);
   refresh();
 });
-for (const id of ["destination", "end-date"]) $(id).addEventListener("input", refresh);
+
+const placeLabel = (p) => [p.region, p.country].filter(Boolean).join(", ");
+
+async function searchPlaces() {
+  const q = $("destination").value.trim();
+  const id = ++searchId;
+  $("place-message").hidden = true;
+  if (q.length < 2) { $("place-options").hidden = true; return; }
+
+  let places = [];
+  try {
+    const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+    places = (await res.json()).places ?? [];
+  } catch { /* shown as "not found" below */ }
+  if (id !== searchId) return; // a newer search has started
+
+  const chips = $("place-chips");
+  chips.replaceChildren();
+  if (!places.length) {
+    $("place-options").hidden = true;
+    $("place-message").textContent = "We can't find that place. Try the nearest town or city, e.g. \"Göreme\" for Cappadocia.";
+    $("place-message").hidden = false;
+    return;
+  }
+  for (const place of places) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.setAttribute("role", "radio");
+    chip.innerHTML = `${escapeHtml(place.name)} <small>${escapeHtml(placeLabel(place))}</small>`;
+    chip.addEventListener("click", () => choosePlace(place, chip));
+    chips.append(chip);
+  }
+  $("place-options").hidden = places.length === 1;
+  choosePlace(places[0], chips.firstElementChild); // best guess; one tap to change
+}
+
+function choosePlace(place, chip) {
+  state.place = place;
+  for (const c of $("place-chips").children) c.setAttribute("aria-checked", String(c === chip));
+  loadWeather();
+}
+
+// ---------- Weather for the chosen place and dates ----------
+
+const SKY_ICONS = { clear: "☀️", "partly cloudy": "⛅", overcast: "☁️", foggy: "🌫️", drizzle: "🌦️", rain: "🌧️",
+  showers: "🌦️", snow: "❄️", "snow showers": "🌨️", thunderstorms: "⛈️" };
+let weatherId = 0;
+
+async function loadWeather() {
+  state.weather = null;
+  refresh();
+  const box = $("weather");
+  if (!state.place) { box.hidden = true; return; }
+  const id = ++weatherId;
+  box.hidden = false;
+  box.className = "weather loading";
+  box.textContent = `Checking the weather in ${state.place.name}…`;
+
+  const { lat, lon } = state.place;
+  const q = new URLSearchParams({ lat, lon, from: $("start-date").value, to: $("end-date").value });
+  try {
+    const res = await fetch(`/api/weather?${q}`);
+    const data = await res.json();
+    if (id !== weatherId) return;
+    if (!res.ok) throw new Error(data.error);
+    state.weather = data;
+    showWeather(data);
+  } catch (err) {
+    if (id !== weatherId) return;
+    box.className = "weather loading";
+    box.textContent = err.message || "We couldn't get the weather right now.";
+  }
+  refresh();
+}
+
+function showWeather(w) {
+  const s = w.summary;
+  const label = w.kind === "forecast"
+    ? "Forecast"
+    : `Typical for these dates · ${Math.min(...w.basedOn)}–${Math.max(...w.basedOn)}`;
+  const rain = s.rainyDays === 0 ? "Dry" : `Rain likely on ${s.rainyDays} of ${s.totalDays} days`;
+  const wind = s.windyDays ? ` · windy on ${s.windyDays}` : "";
+  const days = w.days.map((d) => {
+    const date = new Date(d.date + "T12:00:00");
+    return `<div class="day" title="${d.sky}, ${d.rainChance}% chance of rain">
+      ${date.toLocaleDateString(undefined, { weekday: "short" })}
+      <span class="day-icon">${SKY_ICONS[d.sky] ?? "·"}</span>
+      <b>${d.high}°</b> ${d.low}°</div>`;
+  }).join("");
+
+  const box = $("weather");
+  box.className = "weather";
+  box.innerHTML = `
+    <div class="weather-top">
+      <span class="weather-label">${label}</span>
+      <span class="weather-temps">${s.avgHigh}° <span>/ ${s.avgLow}°</span></span>
+    </div>
+    <p class="weather-line">${escapeHtml(state.place.name)}: highs up to ${s.high}°, nights down to ${s.low}°C. ${rain}${wind}.</p>
+    <div class="weather-days">${days}</div>
+    ${w.kind === "typical" ? `<p class="weather-note">Too far ahead for a forecast, so this is the average of the same dates in past years. Check again closer to your trip.</p>` : ""}`;
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
 
 // ---------- Step 2: photos ----------
 
@@ -189,7 +310,8 @@ function refresh() {
   $("closet-empty").hidden = n > 0;
 
   const missing = [];
-  if (!$("destination").value.trim()) missing.push("where you're going");
+  if (!state.place) missing.push("where you're going");
+  else if (!state.weather) missing.push("the weather (loading)");
   if (!state.who) missing.push("who's dressing");
   if (n < 3) missing.push(`${3 - n} more piece${3 - n === 1 ? "" : "s"}`);
   $("style-button").disabled = missing.length > 0;
@@ -198,7 +320,8 @@ function refresh() {
 
 $("style-button").addEventListener("click", () => {
   // Part 3 will send the trip, the weather and these pieces to NVIDIA.
-  console.log("Trip:", { destination: $("destination").value, from: $("start-date").value, to: $("end-date").value, who: state.who, styles: state.styles });
+  console.log("Trip:", { place: state.place, from: $("start-date").value, to: $("end-date").value, who: state.who, styles: state.styles });
+  console.log("Weather:", state.weather);
   console.log("Closet:", state.items);
   alert("Styling comes in the next step of the build. Your trip and closet are ready!");
 });

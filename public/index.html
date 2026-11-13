@@ -29,6 +29,11 @@
         <input id="destination" class="text-input" type="text" maxlength="80" autocomplete="off"
                placeholder="Santorini, Kyoto, Jaipur…">
       </label>
+      <div id="place-options" class="place-options" aria-live="polite" hidden>
+        <span class="field-label">Which one?</span>
+        <div id="place-chips" class="chips"></div>
+      </div>
+      <p id="place-message" class="place-message" hidden></p>
 
       <div class="field-row">
         <label class="field">
@@ -40,6 +45,8 @@
           <input id="end-date" class="text-input" type="date">
         </label>
       </div>
+
+      <div id="weather" class="weather" aria-live="polite" hidden></div>
 
       <div class="field">
         <span class="field-label">Who's dressing?</span>
