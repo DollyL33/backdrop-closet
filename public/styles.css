@@ -385,3 +385,57 @@ button, input, select { font: inherit; color: inherit; }
 }
 .secondary-button:hover { background: var(--ink); color: #fff; }
 .error-box { margin-top: 14px; padding: 10px 14px; border-radius: 12px; background: var(--coral-soft); color: var(--coral-dark); font-size: 15px; }
+
+/* ---------- Outfit flat-lay: your photos as prints on the backdrop ---------- */
+.flatlay {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 0;
+  padding: 22px 10px 16px;
+  margin: 0 -4px 16px;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.print {
+  margin: 0 -6px;
+  padding: 6px 6px 0;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 10px 22px rgba(0, 0, 0, 0.18);
+  transform: rotate(var(--tilt));
+  transition: transform 0.2s;
+  width: 118px;
+}
+.print:hover { transform: rotate(0deg) scale(1.06); z-index: 1; }
+.print img, .print-swatch {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 2px;
+}
+.print-swatch { display: grid; place-items: end start; padding: 6px; }
+.print-swatch span { font-size: 11px; background: rgba(255, 255, 255, 0.85); border-radius: 4px; padding: 1px 5px; }
+.print figcaption {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--muted);
+  text-align: center;
+  padding: 5px 2px 7px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+/* Main pieces a bit bigger, small pieces a bit smaller. */
+.print-dress, .print-bottom, .print-top, .print-outerwear { width: 132px; }
+.print-shoes, .print-bag { width: 108px; }
+.print-accessory { width: 92px; }
+@media (max-width: 420px) {
+  .print { width: 100px; }
+  .print-dress, .print-bottom, .print-top, .print-outerwear { width: 112px; }
+  .print-shoes, .print-bag { width: 94px; }
+  .print-accessory { width: 80px; }
+}

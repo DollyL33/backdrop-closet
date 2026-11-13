@@ -392,6 +392,30 @@ function pieceHtml(item) {
   </div>`;
 }
 
+// The outfit as a flat-lay: the person's own photos laid out like prints
+// on a table painted in the spot's backdrop colours.
+const LAY_ORDER = ["outerwear", "top", "dress", "bottom", "shoes", "bag", "accessory"];
+const TILTS = [-5, 4, -2, 6, -4, 3, -6];
+
+function flatLayHtml(pieces, colours) {
+  const sorted = [...pieces].sort((a, b) => LAY_ORDER.indexOf(a.category) - LAY_ORDER.indexOf(b.category));
+  const hexes = colours.map((c) => c.hex);
+  const table = hexes.length > 1
+    ? `linear-gradient(135deg, ${hexes.map((h, i) => `${h} ${Math.round((i / (hexes.length - 1)) * 100)}%`).join(", ")})`
+    : hexes[0] || "var(--faint)";
+  const prints = sorted.map((item, i) => {
+    const look = item.photo
+      ? `<img src="${item.photo}" alt="">`
+      : `<span class="print-swatch" style="background:${item.hex}"><span>${escapeHtml(item.colour || item.name)}</span></span>`;
+    return `<figure class="print print-${item.category}" style="--tilt:${TILTS[i % TILTS.length]}deg">
+      ${look}
+      <figcaption>${escapeHtml(item.name)}</figcaption>
+    </figure>`;
+  }).join("");
+  return `<div class="flatlay" style="background:${table}" role="img"
+    aria-label="Outfit: ${escapeHtml(sorted.map((p) => p.name).join(", "))}">${prints}</div>`;
+}
+
 // Dark text on light colours, light text on dark ones.
 function labelColour(hex) {
   const n = parseInt(hex.slice(1), 16);
@@ -409,7 +433,7 @@ function showResults(r) {
   $("postcards").innerHTML = r.spots.map((spot, i) => {
     const strip = spot.backdropColours.map((c) =>
       `<span style="background:${c.hex};--label:${labelColour(c.hex)}" data-name="${escapeHtml(c.name)}"></span>`).join("");
-    const outfit = spot.outfit.map(byId).filter(Boolean).map(pieceHtml).join("");
+    const outfit = flatLayHtml(spot.outfit.map(byId).filter(Boolean), spot.backdropColours);
     const blend = spot.blendIn.map(byId).filter(Boolean);
     const tips = [
       spot.bestTime && `<li><span aria-hidden="true">🕰️</span><span><b>Best light:</b> ${escapeHtml(spot.bestTime)}</span></li>`,
@@ -423,7 +447,7 @@ function showResults(r) {
         <p class="postcard-number">Spot ${i + 1}</p>
         <h3 class="postcard-title">${escapeHtml(spot.name)}</h3>
         <p class="postcard-backdrop">${escapeHtml(spot.backdrop)}</p>
-        <div class="outfit">${outfit}</div>
+        ${outfit}
         <p class="why">${escapeHtml(spot.why)}</p>
         ${blend.length ? `<p class="blend">Would blend in here: ${blend.map((b) =>
           `<span class="blend-chip"><i style="background:${b.hex}"></i>${escapeHtml(b.name)}</span>`).join("")}</p>` : ""}
