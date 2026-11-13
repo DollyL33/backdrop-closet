@@ -202,6 +202,31 @@ zone.addEventListener("drop", (e) => {
   addPhotos(e.dataTransfer.files);
 });
 
+// A ready-made closet so judges can try the app without photographing
+// their own clothes. The photos still go through NVIDIA like any upload.
+// (Photos from Pexels; see CREDITS.md.)
+const SAMPLE_CLOSET = ["pink-tshirt", "blue-shirt", "pink-hoodie", "denim-top-and-jeans",
+  "yellow-dress-and-hat", "floral-dress", "green-slip-dress", "mint-blazer", "camel-coat",
+  "white-sneakers", "blue-tote", "straw-hat"];
+
+$("sample-button").addEventListener("click", async () => {
+  const button = $("sample-button");
+  button.disabled = true;
+  button.textContent = "Loading the sample closet…";
+  try {
+    const files = await Promise.all(SAMPLE_CLOSET.map(async (name) => {
+      const res = await fetch(`sample-closet/${name}.jpg`);
+      if (!res.ok) throw new Error(name);
+      return new File([await res.blob()], `${name}.jpg`, { type: "image/jpeg" });
+    }));
+    addPhotos(files);
+    button.closest(".sample-line").hidden = true;
+  } catch {
+    button.disabled = false;
+    button.textContent = "Couldn't load the samples. Try again";
+  }
+});
+
 function addPhotos(files) {
   for (const file of files) {
     if (!file.type.startsWith("image/") && !/\.(heic|heif)$/i.test(file.name)) continue;
@@ -238,9 +263,22 @@ async function readPhoto({ file, tile }) {
     for (const item of data.items) addItem({ ...item, photo: image }); // keep the photo for the postcards
     tile.className = "photo done";
   } catch (err) {
+    const noClothes = err.message.startsWith("No clothes");
     tile.className = "photo failed";
-    status.textContent = err.message.startsWith("No clothes") ? "No clothes" : "Failed";
+    status.textContent = noClothes ? "No clothes" : "Tap to retry";
     tile.title = err.message;
+    if (!noClothes) {
+      // Tap a failed photo to try it again.
+      tile.tabIndex = 0;
+      tile.setAttribute("role", "button");
+      tile.onclick = () => {
+        tile.onclick = null;
+        tile.className = "photo reading";
+        status.textContent = "Reading";
+        queue.push({ file, tile });
+        pump();
+      };
+    }
   }
 }
 

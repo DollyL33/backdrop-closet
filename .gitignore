@@ -9,3 +9,6 @@ samples/
 .agents/
 .claude/
 skills-lock.json
+
+# Original downloads (resized copies live in public/sample-closet)
+sample-closet-raw/

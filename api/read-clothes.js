@@ -29,13 +29,19 @@ export async function POST(request) {
   }
 
   try {
-    const answer = await askForJson({
+    const ask = () => askForJson({
       model: VISION_MODEL,
       maxTokens: 800,
+      timeoutMs: 25_000,
       messages: [{ role: "user", content: [
         { type: "text", text: PROMPT },
         { type: "image_url", image_url: { url: image } },
       ] }],
+    });
+    // NVIDIA's free service is sometimes slow or busy: try once more.
+    const answer = await ask().catch((err) => {
+      console.warn("read-clothes: retrying after", err.message);
+      return ask();
     });
     return Response.json({ items: cleanItems(answer.items ?? answer) });
   } catch (err) {

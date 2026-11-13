@@ -196,6 +196,7 @@ button, input, select { font: inherit; color: inherit; }
 .photo.reading img { opacity: 0.55; }
 .photo.reading .photo-status::after { content: "…"; animation: dots 1s steps(3) infinite; }
 .photo.failed .photo-status { background: var(--coral-dark); }
+.photo.failed[role="button"] { cursor: pointer; }
 .photo.done .photo-status { display: none; }
 @keyframes dots { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
@@ -439,3 +440,7 @@ button, input, select { font: inherit; color: inherit; }
   .print-shoes, .print-bag { width: 94px; }
   .print-accessory { width: 80px; }
 }
+
+/* ---------- Sample closet + footer ---------- */
+.sample-line { margin: 10px 0 0; font-size: 14px; color: var(--muted); text-align: center; }
+.page-footer { margin-top: 40px; text-align: center; font-size: 12px; color: var(--muted); }
